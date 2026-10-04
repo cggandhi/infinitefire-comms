@@ -1,0 +1,25 @@
+name: Initialize Codebase
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  initialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Pull and Merge Secure Dialer Base
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/Secure-Phone-apps/Secure-Dialer.git
+          git fetch upstream main
+          git merge -X theirs upstream/main --allow-unrelated-histories -m "Initialize InfiniteFire Comms with Secure Dialer base"
+          git push origin main
