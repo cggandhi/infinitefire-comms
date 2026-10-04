@@ -1,0 +1,127 @@
+# Copyright (C) 2026 MovStore
+# Security, Shrinking, and Reflection Rules for Secure-Dialer
+
+# =========================================================
+# ZERO-DATA PRIVACY: STRIP ALL LOGS IN PRODUCTION
+# Prevents PII (Phone numbers, names) from leaking to Android Logcat
+# =========================================================
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
+    public static int e(...);
+}
+
+# Preserve core annotations for standard Android functionality
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,SourceFile,LineNumberTable,MethodParameters,ElementValuePairs,RuntimeVisibleAnnotations,RuntimeVisibleParameterAnnotations
+
+# =========================================================
+# 1. BRUTE-FORCE APP PRESERVATION (Fool-proof safety net)
+# =========================================================
+-keep class com.example.** { *; }
+-keepclassmembers class com.example.** { *; }
+
+# =========================================================
+# 2. DATABASE & SQLCIPHER ENCRYPTION (Critical for Vault)
+# =========================================================
+-keep class **_Impl { *; }
+-keep class **.*_Impl { *; }
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keep @androidx.room.Dao interface * { *; }
+-keep @androidx.room.Entity class * { *; }
+-keepclassmembers class * extends androidx.room.RoomDatabase {
+    public <init>();
+}
+-keep class androidx.room.paging.** { *; }
+-keep class androidx.sqlite.db.** { *; }
+-dontwarn androidx.room.**
+-dontwarn androidx.sqlite.**
+
+# SQLCipher Hardware Crypto Bindings
+-keep class net.sqlcipher.** { *; }
+-keepclassmembers class net.sqlcipher.** { *; }
+-keep class * extends net.sqlcipher.database.SQLiteOpenHelper { *; }
+-keep class net.sqlcipher.database.SQLiteDatabase {
+    native <methods>;
+}
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+-dontwarn net.sqlcipher.**
+
+# =========================================================
+# 3. EXTERNAL LIBRARIES (Coil)
+# =========================================================
+-keep class coil.** { *; }
+-dontwarn coil.**
+-keepclassmembers class * implements coil.request.Request { *; }
+
+# =========================================================
+# 4. ENUMS & TYPE CONVERTERS (Prevents SQLite parsing crashes)
+# =========================================================
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+    public **[] $VALUES;
+}
+-keep class **.CallType { *; }
+
+# =========================================================
+# 5. ANDROID SYSTEM COMPONENTS (Telephony & Broadcasts)
+# =========================================================
+-keep public class * extends android.app.Service
+-keep public class * extends android.app.Activity
+-keep public class * extends android.content.BroadcastReceiver
+-keep public class * extends android.telecom.InCallService
+-keep public class * extends android.telecom.CallScreeningService
+-keep public class * extends android.telecom.ConnectionService
+
+# =========================================================
+# 6. KOTLIN COROUTINES & FLOW
+# =========================================================
+-keepclassmembers class kotlinx.coroutines.android.HandlerDispatcher {
+    <init>(...);
+}
+-keep class kotlinx.coroutines.internal.MainDispatcherFactory { *; }
+-keep class kotlinx.coroutines.android.AndroidDispatcherFactory { *; }
+-keep class kotlinx.coroutines.CoroutineExceptionHandler { *; }
+-keepclassmembers class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.coroutines.**
+
+# =========================================================
+# 7. JETPACK COMPOSE & UI
+# =========================================================
+-keepclassmembers class ** {
+    @androidx.compose.runtime.Composable *;
+}
+-keepclassmembers class androidx.compose.runtime.Recomposer { *; }
+-keep class androidx.paging.** { *; }
+-dontwarn androidx.compose.**
+-dontwarn androidx.paging.**
+-dontwarn androidx.navigation.**
+
+# =========================================================
+# 8. PARCELABLE & SERIALIZABLE (State Restoration)
+# =========================================================
+-keepclassmembers class * implements android.os.Parcelable {
+    public static final ** CREATOR;
+}
+-keepclassmembers class * implements java.io.Serializable {
+    static final long serialVersionUID;
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+}
+
+# =========================================================
+# 9. VIEWMODELS
+# =========================================================
+-keep class * extends androidx.lifecycle.ViewModel { *; }
+-keep class * extends androidx.lifecycle.AndroidViewModel { *; }
+-keepclassmembers class * extends androidx.lifecycle.ViewModel {
+    <init>(...);
+}

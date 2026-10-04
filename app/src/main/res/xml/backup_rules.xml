@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C) 2026 MovStore
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  -->
+<full-backup-content>
+    <!-- Exclude sensitive database, master keystore preferences, and recordings from legacy adb/full backups (API < 31) -->
+    <exclude domain="database" path="dialer_database" />
+    <exclude domain="database" path="dialer_database-journal" />
+    <exclude domain="database" path="dialer_database-wal" />
+    <exclude domain="sharedpref" path="dialer_secure_device_prefs.xml" />
+    <exclude domain="sharedpref" path="dialer_prefs.xml" />
+    <exclude domain="file" path="CallRecordings/" />
+</full-backup-content>
