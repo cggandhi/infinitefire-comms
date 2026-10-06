@@ -51,11 +51,14 @@ jobs:
           PYEOF
           python3 clean.py
 
-      - name: Generate Debug Keystore
+      - name: Provide Debug Keystore
         run: |
-          if [ ! -f debug.keystore ]; then
+          if [ -f debug.keystore.base64 ]; then
+            base64 -d debug.keystore.base64 > debug.keystore
+          elif [ ! -f debug.keystore ]; then
             keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
+          cp -f debug.keystore app/debug.keystore 2>/dev/null || true
 
       - name: Build Debug APK
         run: |
