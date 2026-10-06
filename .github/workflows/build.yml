@@ -39,38 +39,4 @@ jobs:
               cleaned = []
               in_dup = False
               removed = 0
-              for line in lines:
-                  m = pattern.search(line)
-                  if m:
-                      name = m.group(1)
-                      if name in seen:
-                          removed += 1
-                          if "</string>" in line:
-                              continue
-                          else:
-                              in_dup = True
-                              continue
-                      else:
-                          seen.add(name)
-                  elif in_dup:
-                      if "</string>" in line:
-                          in_dup = False
-                      continue
-                  cleaned.append(line)
-              if removed > 0:
-                  print(f"Cleaned {removed} duplicate string(s) from {file_path}")
-                  with open(file_path, "w", encoding="utf-8") as f:
-                      f.write("\n".join(cleaned) + "\n")
-          '
-
-      - name: Build Debug APK
-        run: |
-          chmod +x gradlew
-          ./gradlew :app:assembleDebug --stacktrace || gradle :app:assembleDebug --stacktrace
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: InfiniteFire-Comms-Debug
-          path: app/build/outputs/apk/debug/*.apk
-          retention-days: 90
+              for line in
