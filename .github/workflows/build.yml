@@ -26,7 +26,7 @@ jobs:
           rm -f gradle/wrapper/gradle-wrapper.jar
           gradle wrapper || true
 
-      - name: Deduplicate String Resources
+      - name: Fix and Inject Missing String Resources
         run: |
           cat << 'PYEOF' > clean.py
           import re, glob
@@ -48,6 +48,50 @@ jobs:
                   out.append(l)
               with open(p, "w", encoding="utf-8") as f:
                   f.write("\n".join(out) + "\n")
+
+          base_xml_path = "app/src/main/res/values/strings.xml"
+          missing_strings = {
+              "callback_reminders_title": "Callback Reminders",
+              "callback_reminders_stats": "Callback Reminders Statistics",
+              "header_caller_id_privacy": "Caller ID & Privacy",
+              "settings_hide_caller_id": "Hide Outgoing Caller ID",
+              "settings_hide_caller_id_sub": "Mask phone number on outgoing calls using carrier CLIR prefixes",
+              "settings_clir_prefix": "Carrier CLIR Prefix",
+              "settings_clir_prefix_sub": "Prefix dialed before numbers to suppress caller ID",
+              "settings_clir_warning_title": "Caller ID Warning",
+              "settings_clir_warning_desc": "Emergency calls (112, 911, 999) will always bypass caller ID masking",
+              "settings_system_sim_caller_id": "Use SIM Default Settings",
+              "settings_system_sim_caller_id_sub": "Defer to carrier and SIM card network preferences",
+              "settings_clir_prefix_dialog_title": "Select CLIR Prefix",
+              "settings_clir_prefix_gsm": "GSM Standard (#31#)",
+              "settings_clir_prefix_us": "North America (*67)",
+              "settings_clir_prefix_uk": "United Kingdom (141)",
+              "settings_clir_prefix_japan": "Japan (184)",
+              "settings_clir_prefix_custom": "Custom Prefix",
+              "settings_clir_custom_label": "Enter custom carrier prefix"
+          }
+
+          try:
+              with open(base_xml_path, "r", encoding="utf-8") as f:
+                  content = f.read()
+              lines = content.splitlines()
+              insert_idx = -1
+              for i, line in enumerate(lines):
+                  if "</resources>" in line:
+                      insert_idx = i
+                      break
+              if insert_idx != -1:
+                  new_entries = []
+                  for k, v in missing_strings.items():
+                      if f'name="{k}"' not in content:
+                          new_entries.append(f'    <string name="{k}">{v}</string>')
+                  if new_entries:
+                      lines = lines[:insert_idx] + new_entries + lines[insert_idx:]
+                      with open(base_xml_path, "w", encoding="utf-8") as f:
+                          f.write("\n".join(lines) + "\n")
+                      print(f"Injected {len(new_entries)} missing strings into {base_xml_path}")
+          except Exception as e:
+              print(f"Notice: {e}")
           PYEOF
           python3 clean.py
 
