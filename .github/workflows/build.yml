@@ -28,15 +28,38 @@ jobs:
 
       - name: Deduplicate String Resources
         run: |
-          python3 -c '
+          cat << 'PYEOF' > clean.py
           import re, glob
-          files = glob.glob("app/src/main/res/values*/strings.xml")
-          pattern = re.compile(r"<string\s+name=[\"\x27]([^\x27\"]+)[\"\x27]")
-          for file_path in files:
-              with open(file_path, "r", encoding="utf-8") as f:
+          for p in glob.glob("app/src/main/res/values*/strings.xml"):
+              with open(p, "r", encoding="utf-8") as f:
                   lines = f.read().splitlines()
-              seen = set()
-              cleaned = []
-              in_dup = False
-              removed = 0
-              for line in
+              seen, out, skip = set(), [], False
+              for l in lines:
+                  m = re.search(r'<string\s+name="([^"]+)"', l)
+                  if m:
+                      if m.group(1) in seen:
+                          skip = "</string>" not in l
+                          continue
+                      seen.add(m.group(1))
+                  elif skip:
+                      if "</string>" in l:
+                          skip = False
+                      continue
+                  out.append(l)
+              with open(p, "w", encoding="utf-8") as f:
+                  f.write("\n".join(out) + "\n")
+          PYEOF
+          python3 clean.py
+
+      - name: Build Debug APK
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :app:assembleDebug 2>&1 | tee build.log || { echo "=== FAILURE SUMMARY ==="; grep -A 15 -B 2 "* What went wrong:" build.log; exit 1; }
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: InfiniteFire-Comms-Debug
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 90
